@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/dmltdev/flashcards/internal/database"
+	"github.com/dmltdev/flashcards/internal/logger"
 	"github.com/dmltdev/flashcards/internal/models"
 )
 
@@ -17,22 +18,29 @@ func NewHandler(db *database.DB) *Handler {
 	return &Handler{db: db}
 }
 
+var log = logger.Default()
+
 func (h *Handler) CreateDeck(w http.ResponseWriter, r *http.Request) {
 	var deck models.Deck
 	if err := json.NewDecoder(r.Body).Decode(&deck); err != nil {
+		log.Error("Invalid JSON", err)
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
 
 	if err := deck.Validate(); err != nil {
+		log.Error("Invalid deck", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	if err := h.db.CreateDeck(&deck); err != nil {
+		log.Error("Failed to create deck", err)
 		http.Error(w, "Failed to create deck", http.StatusInternalServerError)
 		return
 	}
+
+	log.Info("Deck created", "deck", deck)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -43,12 +51,14 @@ func (h *Handler) GetDeck(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
+		log.Error("Invalid deck ID", err)
 		http.Error(w, "Invalid deck ID", http.StatusBadRequest)
 		return
 	}
 
 	deck, err := h.db.GetDeck(id)
 	if err != nil {
+		log.Error("Failed to get deck", err)
 		http.Error(w, "Deck not found", http.StatusNotFound)
 		return
 	}
@@ -61,12 +71,14 @@ func (h *Handler) CreateCard(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	deckID, err := strconv.Atoi(idStr)
 	if err != nil {
+		log.Error("Invalid deck ID", err)
 		http.Error(w, "Invalid deck ID", http.StatusBadRequest)
 		return
 	}
 
 	var card models.Card
 	if err := json.NewDecoder(r.Body).Decode(&card); err != nil {
+		log.Error("Invalid JSON", err)
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
@@ -74,14 +86,18 @@ func (h *Handler) CreateCard(w http.ResponseWriter, r *http.Request) {
 	card.DeckID = deckID
 
 	if err := card.Validate(); err != nil {
+		log.Error("Invalid card", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	if err := h.db.CreateCard(&card); err != nil {
+		log.Error("Failed to create card", err)
 		http.Error(w, "Failed to create card", http.StatusInternalServerError)
 		return
 	}
+
+	log.Info("Card created", "card", card)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -98,11 +114,13 @@ func (h *Handler) GetNextCard(w http.ResponseWriter, r *http.Request) {
 
 	cards, err := h.db.GetCardsByDeck(deckID)
 	if err != nil {
+		log.Error("Failed to get cards", err)
 		http.Error(w, "Failed to get cards", http.StatusInternalServerError)
 		return
 	}
 
 	if len(cards) == 0 {
+		log.Warn("No cards found in deck", "deck_id", deckID)
 		http.Error(w, "No cards found in deck", http.StatusNotFound)
 		return
 	}
@@ -110,6 +128,8 @@ func (h *Handler) GetNextCard(w http.ResponseWriter, r *http.Request) {
 	// For MVP: return the first card (oldest created)
 	// Later: implement spaced repetition logic
 	nextCard := cards[len(cards)-1] // Get oldest card
+
+	log.Debug("Next card retrieved", "card", nextCard)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(nextCard)
