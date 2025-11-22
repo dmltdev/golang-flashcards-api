@@ -30,6 +30,7 @@ func main() {
 	
 	mux.HandleFunc("POST /decks/{id}/cards", handler.CreateCard)
 	mux.HandleFunc("GET /decks/{id}/cards/next", handler.GetNextCard)
+	mux.HandleFunc("POST /cards/{id}/reviews", handler.CreateReview)
 
 	port := getEnv("SERVER_PORT", "8080")
 	log.Printf("Server starting on port %s", port)

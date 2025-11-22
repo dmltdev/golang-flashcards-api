@@ -112,25 +112,16 @@ func (h *Handler) GetNextCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cards, err := h.db.GetCardsByDeck(deckID)
+	card, err := h.db.GetNextDueCard(deckID)
+
 	if err != nil {
 		log.Error("Failed to get cards", err)
 		http.Error(w, "Failed to get cards", http.StatusInternalServerError)
 		return
 	}
 
-	if len(cards) == 0 {
-		log.Warn("No cards found in deck", "deck_id", deckID)
-		http.Error(w, "No cards found in deck", http.StatusNotFound)
-		return
-	}
-
-	// For MVP: return the first card (oldest created)
-	// Later: implement spaced repetition logic
-	nextCard := cards[len(cards)-1] // Get oldest card
-
-	log.Debug("Next card retrieved", "card", nextCard)
+	log.Debug("Next card retrieved", "card", card)
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(nextCard)
+	json.NewEncoder(w).Encode(card)
 }

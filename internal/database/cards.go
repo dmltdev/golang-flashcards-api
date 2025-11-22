@@ -46,6 +46,33 @@ func (db *DB) GetCardsByDeck(deckID int) ([]models.Card, error) {
 	return cards, nil
 }
 
+func (db *DB) GetNextDueCard(deckID int) (*models.Card, error) {
+	var card models.Card
+	query := `
+	  	SELECT c.id, c.deck_id, c.front, c.back, c.created_at, c.updated_at
+	  	FROM cards c
+	  	LEFT JOIN (
+	 		SELECT DISTINCT ON (card_id) card_id, next_review_at
+			FROM reviews
+			ORDER BY card_id, reviewed_at DESC 
+	  	) r ON c.id = r.card_id
+		WHERE c.deck_id = $1
+			AND (r.next_review_at IS NULL OR r.next_review_at <= NOW())
+		ORDER BY r.next_review_at ASC NULLS FIRST
+		LIMIT 1
+	`
+
+	err := db.Get(&card, query, deckID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("next due card not found")
+		}
+		return nil, fmt.Errorf("failed to get next due card: %w", err)
+	}
+
+	return &card, nil
+}
+
 func (db *DB) UpdateCard(card *models.Card) error {
 	query := `
 		UPDATE cards 
