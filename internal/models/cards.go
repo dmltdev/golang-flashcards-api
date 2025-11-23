@@ -18,6 +18,8 @@ type Card struct {
 type Deck struct {
     ID int `json:"id" db:"id"`
 	Name string `json:"name" db:"name"`
+	Cards []Card `json:"cards,omitempty" db:"-"`
+	CardCount int `json:"card_count" db:"card_count"`
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
 }

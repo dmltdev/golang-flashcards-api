@@ -26,6 +26,7 @@ func main() {
 	mux := http.NewServeMux()
 	
 	mux.HandleFunc("POST /decks", handler.CreateDeck)
+	mux.HandleFunc("GET /decks", handler.GetDecks)
 	mux.HandleFunc("GET /decks/{id}", handler.GetDeck)
 	
 	mux.HandleFunc("POST /decks/{id}/cards", handler.CreateCard)

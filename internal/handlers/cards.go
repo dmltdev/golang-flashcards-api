@@ -47,6 +47,18 @@ func (h *Handler) CreateDeck(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(deck)
 }
 
+func (h *Handler) GetDecks(w http.ResponseWriter, r *http.Request) {
+	decks, err := h.db.GetAllDecks()
+	if err != nil {
+		log.Error("Failed to get all decks", err)
+		http.Error(w, "Failed to get all decks", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(decks)
+}
+
 func (h *Handler) GetDeck(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, err := strconv.Atoi(idStr)

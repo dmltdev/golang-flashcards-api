@@ -32,17 +32,38 @@ func (db *DB) GetDeck(id int) (*models.Deck, error) {
 		}
 		return nil, fmt.Errorf("failed to get deck: %w", err)
 	}
+
+	cardsQuery := `SELECT id, deck_id, front, back, created_at, updated_at FROM cards WHERE deck_id = $1`
+	var cards []models.Card
+	err = db.Select(&cards, cardsQuery, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get cards for deck: %w", err)
+	}
+
+	deck.Cards = cards
+
 	return &deck, nil
 }
 
 func (db *DB) GetAllDecks() ([]models.Deck, error) {
 	var decks []models.Deck
-	query := `SELECT id, name, created_at, updated_at FROM decks ORDER BY created_at DESC`
+	query := `
+		SELECT 
+			d.id, 
+			d.name, 
+			d.created_at, 
+			d.updated_at,
+			COUNT(c.id) as card_count
+		FROM decks d
+		LEFT JOIN cards c ON d.id = c.deck_id
+		GROUP BY d.id
+		ORDER BY d.created_at DESC`
 	
 	err := db.Select(&decks, query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get decks: %w", err)
 	}
+
 	return decks, nil
 }
 
