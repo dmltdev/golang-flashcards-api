@@ -15,5 +15,21 @@ services:
       - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
     restart: unless-stopped
 
+  api:
+    build: .
+    container_name: flashcards_api
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=flashcards_user
+      - DB_PASSWORD=flashcards_pass
+      - DB_NAME=flashcards
+      - DB_SSL_MODE=disable
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
 volumes:
   postgres_data:
