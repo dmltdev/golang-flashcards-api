@@ -27,7 +27,6 @@ func main() {
 	
 	mux.HandleFunc("POST /decks", handler.CreateDeck)
 
-	log.Printf("Registering route: GET /decks")
 	mux.HandleFunc("GET /decks", handler.GetDecks)
 	mux.HandleFunc("GET /decks/{id}", handler.GetDeck)
 	
